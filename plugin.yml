@@ -1,0 +1,14 @@
+name: ExponentialCooldown
+version: 1.0
+main: coffee.laeven.expocool.ExpoCool
+description: A plugin to add exponential cooldowns to enderpearls and riptide tridents. Primarily made for ArtualMC's SMP.
+authors:
+    - Laeven
+api-version: '1.21.1'
+load: STARTUP
+
+commands:
+    expocooldown:
+        description: Management of Exponential Cooldown
+        aliases: [ec]
+        permission: ec.commands.expocool

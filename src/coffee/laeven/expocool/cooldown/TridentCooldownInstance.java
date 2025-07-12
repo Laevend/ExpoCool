@@ -29,6 +29,8 @@ public class TridentCooldownInstance extends CooldownInstance
 		long deductDelayInTicks = (long) (deductDelay * 20f);
 		cooloffClock = new CooloffClock(deductDelayInTicks);
 		cooloffClock.start();
+		
+		heldCooldown = 0;
 	}
 
 	@Override
@@ -48,5 +50,21 @@ public class TridentCooldownInstance extends CooldownInstance
 		if(owner.isOnline()) { return; }
 		CooldownCtrl.removeTridentCooldownInstance(owner.getUniqueId());
 		Logg.verb("Player is offline, removing instance...",Logg.VerbGroup.COOLDOWN_INSTANCE);
+	}
+	
+	@Override
+	public void holdCooldown()
+	{
+		this.heldCooldown = owner.getCooldown(Material.TRIDENT);
+	}
+
+	@Override
+	public void applyHeldCooldown()
+	{
+		DelayUtils.executeDelayedTask(() ->
+		{
+			owner.setCooldown(Material.TRIDENT,heldCooldown);
+			heldCooldown = 0;
+		});
 	}
 }

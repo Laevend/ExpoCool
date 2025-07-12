@@ -5,13 +5,21 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Firework;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.SpectralArrow;
+import org.bukkit.entity.Trident;
+import org.bukkit.entity.WindCharge;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 import coffee.laeven.expocool.config.Configurable;
 import coffee.laeven.expocool.config.item.ConfigItem;
@@ -40,12 +48,50 @@ public class CombatCtrl implements Listener
 		if(!(e.getEntity().getShooter() instanceof Player attacker)) { return; }
 		if(!(e.getHitEntity() instanceof Player victim)) { return; }
 		
+		// Don't trigger combat event over a projectile that does not do damage
+		if(!(e.getEntity() instanceof Arrow) &&
+				!(e.getEntity() instanceof WindCharge) &&
+				!(e.getEntity() instanceof Firework) &&
+				!(e.getEntity() instanceof SpectralArrow) &&
+				!(e.getEntity() instanceof Trident)) { return; }
+		
 		// Delayed by 1 tick so that getLastDamage() becomes the damage the victim received just now
 		DelayUtils.executeDelayedTask(() ->
 		{
 			Logg.verb("(" + attacker.getName() + ") v (" + victim.getName() + ") Projectile damage: " + victim.getLastDamage(),Logg.VerbGroup.IN_COMBAT);
 			attemptCombat(attacker,victim,victim.getLastDamage());
 		});
+	}
+	
+	/**
+	 * Spigot calls this method when a player leaves the server
+	 * @param e PlayerQuitEvent
+	 */
+	@EventHandler
+	public void onPlayerLeave(PlayerQuitEvent e)
+	{
+		if(playersInCombat.containsKey(e.getPlayer().getUniqueId()))
+		{
+			playersInCombat.get(e.getPlayer().getUniqueId()).stopDebugClock();	
+		}
+	}
+	
+	/**
+	 * Spigot calls this method when a player joins the server
+	 * @param e PlayerQuitEvent
+	 */
+	@EventHandler
+	public void onPlayerJoin(PlayerJoinEvent e)
+	{
+		if(playersInCombat.containsKey(e.getPlayer().getUniqueId()))
+		{
+			playersInCombat.get(e.getPlayer().getUniqueId()).resync(e.getPlayer());
+			
+			if(CooldownCtrl.isInDebugMode(e.getPlayer()))
+			{
+				playersInCombat.get(e.getPlayer().getUniqueId()).startDebugClock();
+			}
+		}
 	}
 	
 	private void attemptCombat(Player attacker,Player defender,double damage)
@@ -98,19 +144,34 @@ public class CombatCtrl implements Listener
 		}
 	}
 	
-	public static void tagPlayerAsOutOfCombat(Player p)
+	public static void tagPlayerAsOutOfCombat(UUID playerUUID)
 	{
-		Objects.requireNonNull(p,"Player cannot be null!");
+		Objects.requireNonNull(playerUUID,"Player UUID cannot be null!");
 		
-		if(!playersInCombat.containsKey(p.getUniqueId())) { return; }
+		if(!playersInCombat.containsKey(playerUUID)) { return; }
 		
-		playersInCombat.remove(p.getUniqueId()).dispose();
-		CooldownCtrl.resetCooldown(p);
+		playersInCombat.remove(playerUUID).dispose();
+		CooldownCtrl.resetCooldown(playerUUID);
+		CooldownCtrl.clearInstance(playerUUID);
+		
+		// Player still online?
+		Player p = Bukkit.getPlayer(playerUUID);
+		
+		if(p == null) { return; }
 		
 		if(CooldownCtrl.isInDebugMode(p))
 		{
 			PrintUtils.actionBar(p,"&aYou are now out of combat");
 		}
+	}
+	
+	/**
+	 * Clears all current cooldown instances
+	 */
+	public static void clearInstances()
+	{
+		playersInCombat.forEach((k,v) -> v.dispose());
+		playersInCombat.clear();
 	}
 	
 	public static CombatInstance getCombatInstance(Player p)

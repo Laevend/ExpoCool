@@ -11,7 +11,9 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import coffee.laeven.expocool.ExpoCool;
+import coffee.laeven.expocool.combat.CombatCtrl;
 import coffee.laeven.expocool.config.item.ConfigItem;
+import coffee.laeven.expocool.cooldown.CooldownCtrl;
 import coffee.laeven.expocool.utils.FUtils;
 import coffee.laeven.expocool.utils.Logg;
 import coffee.laeven.expocool.utils.TimeUtils;
@@ -26,7 +28,7 @@ public class YamlConfig implements PluginConfig
 	private FileConfiguration config;
 	private List<ConfigItem<?>> defaults;
 	private Path configFile;
-	private String header;
+	private List<String> header;
 	private boolean loaded;
 	
 	private int maxCorruptReplaceAttempts = 5;
@@ -40,11 +42,11 @@ public class YamlConfig implements PluginConfig
 	 * @param defaults Default values for this configuration file
 	 * @param header The header comment of the configuration file
 	 */
-	public YamlConfig(Path configFile,List<ConfigItem<?>> defaults,String header)
+	public YamlConfig(Path configFile,List<ConfigItem<?>> defaults)
 	{
 		this.configFile = configFile;
 		this.defaults = defaults;
-		this.header = header;
+		this.header = getHeader();
 		
 		if(Files.exists(configFile))
 		{ 
@@ -209,7 +211,7 @@ public class YamlConfig implements PluginConfig
 		FUtils.createFile(configFile);
 		this.config = YamlConfiguration.loadConfiguration(configFile.toFile());
 		setDefaults();
-		this.config.options().setHeader(List.of(this.header));
+		this.config.options().setHeader(this.header);
 		save();
 	}
 
@@ -227,6 +229,10 @@ public class YamlConfig implements PluginConfig
 	@Override
 	public void reloadConfig()
 	{
+		CooldownCtrl.clearInstances();
+		CombatCtrl.clearInstances();
+		
+		this.loaded = false;
 		this.load();
 	}
 	
@@ -325,5 +331,20 @@ public class YamlConfig implements PluginConfig
 	public void set(String key,Object value)
 	{
 		get().set(key,value);
+	}
+	
+	private List<String> getHeader()
+	{
+		return List.of
+		(
+			"___________                     _________               .__   ",
+			"\\_   _____/__  _________   ____ \\_   ___ \\  ____   ____ |  |  ",
+			" |    __)_\\  \\/  /\\____ \\ /  _ \\/    \\  \\/ /  _ \\ /  _ \\|  |  ",
+			" |        \\>    < |  |_> >  <_> )     \\___(  <_> |  <_> )  |__",
+			"/_______  /__/\\_ \\|   __/ \\____/ \\______  /\\____/ \\____/|____/",
+			"        \\/      \\/|__|                  \\/                    ",
+			"==================================================================",
+			"A plugin by Laeven"
+		);
 	}
 }

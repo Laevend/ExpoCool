@@ -59,8 +59,8 @@ public class ExpoCool extends JavaPlugin
 		
 		ExpoCoolCommand expoCommand = new ExpoCoolCommand();
 		
-		this.getCommand("expocooldown").setExecutor(expoCommand);
-		this.getCommand("expocooldown").setTabCompleter(expoCommand);
+		this.getCommand("expocool").setExecutor(expoCommand);
+		this.getCommand("expocool").setTabCompleter(expoCommand);
 		
 		initEndTime = System.currentTimeMillis();
 		
@@ -74,6 +74,7 @@ public class ExpoCool extends JavaPlugin
 	public void onDisable()
 	{
 		CooldownCtrl.clearInstances();
+		CombatCtrl.clearInstances();
 	}
 	
 	private void createConfig()
@@ -136,7 +137,7 @@ public class ExpoCool extends JavaPlugin
 			Logg.fatal("Configurables could not be initialised!",e);
 		}
 		
-		config = new YamlConfig(internalFilePath("config.yml"),defaults,"ExpoCool config file");
+		config = new YamlConfig(internalFilePath("config.yml"),defaults);
 	}
 	
 	private void configureLogger()
@@ -273,7 +274,7 @@ public class ExpoCool extends JavaPlugin
 	}
 	
 	public void reloadConfig()
-	{
+	{		
 		config.reloadConfig();
 	}
 	

@@ -67,6 +67,7 @@ public class CooldownCtrl implements Listener
 			}
 			
 			eci.stopDebugClock();
+			eci.holdCooldown();
 		}
 		
 		if(tridentCooldownMap.containsKey(e.getPlayer().getUniqueId()))
@@ -80,6 +81,7 @@ public class CooldownCtrl implements Listener
 			}
 			
 			tci.stopDebugClock();
+			tci.holdCooldown();
 		}
 	}
 	
@@ -92,7 +94,9 @@ public class CooldownCtrl implements Listener
 	{
 		if(pearlCooldownMap.containsKey(e.getPlayer().getUniqueId()))
 		{
-			pearlCooldownMap.get(e.getPlayer().getUniqueId()).resync(e.getPlayer());
+			EnderpearlCooldownInstance eci = pearlCooldownMap.get(e.getPlayer().getUniqueId());
+			eci.resync(e.getPlayer());
+			eci.applyHeldCooldown();
 			
 			if(playersInDebugMode.contains(e.getPlayer().getUniqueId()))
 			{
@@ -102,7 +106,9 @@ public class CooldownCtrl implements Listener
 		
 		if(tridentCooldownMap.containsKey(e.getPlayer().getUniqueId()))
 		{
-			tridentCooldownMap.get(e.getPlayer().getUniqueId()).resync(e.getPlayer());
+			TridentCooldownInstance tci = tridentCooldownMap.get(e.getPlayer().getUniqueId());
+			tci.resync(e.getPlayer());
+			tci.applyHeldCooldown();
 			
 			if(playersInDebugMode.contains(e.getPlayer().getUniqueId()))
 			{
@@ -195,43 +201,45 @@ public class CooldownCtrl implements Listener
 		tridentCooldownMap.clear();
 	}
 	
-	/**
-	 * Clears cooldown instance for a player
-	 */
 	public static void clearInstance(Player p)
 	{
 		Objects.requireNonNull(p,"Player cannot be null!");
+		clearInstance(p.getUniqueId());
+	}
+	
+	/**
+	 * Clears cooldown instance for a player
+	 */
+	public static void clearInstance(UUID playerUUID)
+	{
+		Objects.requireNonNull(playerUUID,"Player uuid cannot be null!");
 		
-		UUID uuid = p.getUniqueId();
-		
-		if(pearlCooldownMap.containsKey(uuid))
+		if(pearlCooldownMap.containsKey(playerUUID))
 		{
-			pearlCooldownMap.get(uuid).dispose();
+			pearlCooldownMap.get(playerUUID).dispose();
 		}
 		
-		if(tridentCooldownMap.containsKey(uuid))
+		if(tridentCooldownMap.containsKey(playerUUID))
 		{
-			tridentCooldownMap.get(uuid).dispose();
+			tridentCooldownMap.get(playerUUID).dispose();
 		}
 	}
 	
 	/**
 	 * Resets cooldown instance for a player
 	 */
-	public static void resetCooldown(Player p)
+	public static void resetCooldown(UUID playerUUID)
 	{
-		Objects.requireNonNull(p,"Player cannot be null!");
+		Objects.requireNonNull(playerUUID,"Player cannot be null!");
 		
-		UUID uuid = p.getUniqueId();
-		
-		if(pearlCooldownMap.containsKey(uuid))
+		if(pearlCooldownMap.containsKey(playerUUID))
 		{
-			pearlCooldownMap.get(uuid).resetCooldown();
+			pearlCooldownMap.get(playerUUID).resetCooldown();
 		}
 		
-		if(tridentCooldownMap.containsKey(uuid))
+		if(tridentCooldownMap.containsKey(playerUUID))
 		{
-			tridentCooldownMap.get(uuid).resetCooldown();
+			tridentCooldownMap.get(playerUUID).resetCooldown();
 		}
 	}
 	

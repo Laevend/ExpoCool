@@ -8,6 +8,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import coffee.laeven.expocool.ExpoCool;
+import coffee.laeven.expocool.config.YamlConfig;
 import coffee.laeven.expocool.cooldown.CooldownCtrl;
 import coffee.laeven.expocool.utils.Logg;
 import coffee.laeven.expocool.utils.PrintUtils;
@@ -34,7 +35,7 @@ public class ExpoCoolCommand extends BaseCommand
 			return;
 		}
 		
-		if(!assertArgument(args[0],TOGGLE_VERBOSE_MESSAGES,TOGGLE_DEBUG))
+		if(!assertArgument(args[0],TOGGLE_VERBOSE_MESSAGES,TOGGLE_DEBUG,RELOAD_CONFIG))
 		{
 			PrintUtils.error(sender,"Bad arguments!");
 			return;
@@ -82,6 +83,15 @@ public class ExpoCoolCommand extends BaseCommand
 	{
 		PrintUtils.info(sender,"Reloading config...");
 		ExpoCool.instance().reloadConfig();
+		
+		if(((YamlConfig) ExpoCool.getConfigFile()).isLoaded())
+		{
+			PrintUtils.success(sender,"Config reloaded!");
+		}
+		else
+		{
+			PrintUtils.error(sender,"Error reloading config! Check console!");
+		}
 	}
 	
 	private static TabTree tree = new TabTree();

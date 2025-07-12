@@ -4,6 +4,7 @@ import java.text.DecimalFormat;
 import java.util.Objects;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
@@ -40,8 +41,8 @@ public abstract class CooldownInstance
 	protected CooloffClock cooloffClock = null;
 	protected DebugClock debugClock = null;
 	
-	protected float lastCooldown = 0f;
-	protected float lastCooldownDebugView = 0f;
+	protected float lastCooldown = 0f;						// Used for debug viewing
+	protected int heldCooldown = 0;							/** Cooldown held if player disconnects. {@link #holdCooldown()} */
 	
 	protected CooldownType type;
 	
@@ -81,7 +82,6 @@ public abstract class CooldownInstance
 		newCooldown = MathUtils.clamp(minCooldown,maxCooldown,(newCooldown - totalDeductAmount));
 		
 		lastCooldown = newCooldown;
-		lastCooldownDebugView = newCooldown;
 		
 		// Convert cooldown in seconds to game ticks
 		int newCooldownInTicks = (int) (newCooldown * 20);
@@ -105,6 +105,7 @@ public abstract class CooldownInstance
 	{
 		powerModifier = 0f;
 		totalDeductAmount = 0f;
+		lastCooldown = 1f;
 		removeIfPlayerIsOffline();
 	}
 	
@@ -184,11 +185,11 @@ public abstract class CooldownInstance
 			
 			if(type == CooldownType.ENDERPEARL)
 			{
-				debugBar = Bukkit.createBossBar("Enderpearl cooldown remaining (" + df.format(lastCooldownDebugView) + ")",BarColor.PURPLE,BarStyle.SOLID);
+				debugBar = Bukkit.createBossBar("Enderpearl cooldown remaining (0.00)",BarColor.PURPLE,BarStyle.SOLID);
 			}
 			else if(type == CooldownType.TRIDENT)
 			{
-				debugBar = Bukkit.createBossBar("Trident cooldown remaining (" + df.format(lastCooldownDebugView) + ")",BarColor.BLUE,BarStyle.SOLID);
+				debugBar = Bukkit.createBossBar("Trident cooldown remaining (0.00)",BarColor.BLUE,BarStyle.SOLID);
 			}
 			else
 			{
@@ -215,17 +216,14 @@ public abstract class CooldownInstance
 		{
 			if(type == CooldownType.ENDERPEARL)
 			{
-				debugBar.setTitle("Enderpearl cooldown remaining (" + df.format(lastCooldownDebugView) + ")");
+				debugBar.setTitle("Enderpearl cooldown remaining (" + df.format(((float) owner.getCooldown(Material.ENDER_PEARL) / 20f)) + ")");
+				debugBar.setProgress(MathUtils.clamp(0f,1f,(1f / lastCooldown) * ((float) owner.getCooldown(Material.ENDER_PEARL) / 20f)));
 			}
 			else if(type == CooldownType.TRIDENT)
 			{
-				debugBar.setTitle("Trident cooldown remaining (" + df.format(lastCooldownDebugView) + ")");
+				debugBar.setTitle("Trident cooldown remaining (" + df.format(((float) owner.getCooldown(Material.TRIDENT) / 20f)) + ")");
+				debugBar.setProgress(MathUtils.clamp(0f,1f,(1f / lastCooldown) * ((float) owner.getCooldown(Material.TRIDENT) / 20f)));
 			}
-			
-			lastCooldownDebugView -= 0.05;
-			lastCooldownDebugView = MathUtils.clamp(0.00f,maxCooldown,lastCooldownDebugView);
-			
-			debugBar.setProgress((1f / lastCooldown) * lastCooldownDebugView);
 		}
 	}
 	
@@ -249,6 +247,24 @@ public abstract class CooldownInstance
 	{
 		return lastCooldown;
 	}
+	
+	/**
+	 * <p>Should a player disconnect from the server, their cooldown for
+	 * the enderpearl or trident will be reset to the vanilla default
+	 * when they rejoin.
+	 *
+	 *<p>To prevent them bypassing this, the cooldown remaining is 'held'
+	 * until they return or the combat encounter expires.
+	 * 
+	 * <p>If they return during the combat encounter, this held cooldown
+	 * gets re-applied
+	 */
+	public abstract void holdCooldown();
+	
+	/**
+	 * Applies the held cooldown
+	 */
+	public abstract void applyHeldCooldown();
 
 	/**
 	 * Dispose of this cooldown instance

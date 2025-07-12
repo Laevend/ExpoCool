@@ -19,7 +19,7 @@ public class StringUtils
 			if(s.charAt(chopTo) == ' ')
 			{
 				choppedString.add(s.substring(chopFrom,chopTo));
-				chopFrom = chopTo;
+				chopFrom = chopTo + 1;
 				chopTo = chopTo + length;
 			}
 			

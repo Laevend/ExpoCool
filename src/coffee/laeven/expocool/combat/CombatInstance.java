@@ -2,6 +2,7 @@ package coffee.laeven.expocool.combat;
 
 import java.text.DecimalFormat;
 import java.util.Objects;
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.boss.BarColor;
@@ -18,6 +19,7 @@ import coffee.laeven.expocool.utils.clocks.RepeatingClock;
 public class CombatInstance
 {
 	private Player playerInCombat;
+	private UUID playerUUID;
 	private String name;
 	private CombatClock combatClock;
 	private DebugClock debugClock = null;
@@ -26,6 +28,7 @@ public class CombatInstance
 	{
 		Objects.requireNonNull(p,"Player cannot be null!");
 		this.playerInCombat = p;
+		this.playerUUID = p.getUniqueId();
 		this.name = p.getName();
 		this.combatClock = new CombatClock();
 		this.combatClock.start();
@@ -62,6 +65,17 @@ public class CombatInstance
 	{
 		return debugClock;
 	}
+	
+	/**
+	 * Set owner of this cooldown instance
+	 * <p>Required when player leaves and re-joins the server.
+	 * <p>Rejoining the server desyncs their player interface
+	 * @param owner
+	 */
+	public void resync(Player owner)
+	{
+		this.playerInCombat = owner;
+	}
 
 	public class CombatClock extends RefillableIntervalClock
 	{
@@ -78,7 +92,7 @@ public class CombatInstance
 		@Override
 		public void execute() throws Exception
 		{
-			CombatCtrl. tagPlayerAsOutOfCombat(playerInCombat);
+			CombatCtrl.tagPlayerAsOutOfCombat(playerUUID);
 		}
 
 		public Player getPlayerInCombat()

@@ -29,6 +29,8 @@ public class EnderpearlCooldownInstance extends CooldownInstance
 		long deductDelayInTicks = (long) (deductDelay * 20f);
 		cooloffClock = new CooloffClock(deductDelayInTicks);
 		cooloffClock.start();
+		
+		heldCooldown = 1;
 	}
 
 	@Override
@@ -48,5 +50,21 @@ public class EnderpearlCooldownInstance extends CooldownInstance
 		if(owner.isOnline()) { return; }
 		CooldownCtrl.removeEnderpearlCooldownInstance(owner.getUniqueId());
 		Logg.verb("Player is offline, removing instance...",Logg.VerbGroup.COOLDOWN_INSTANCE);
+	}
+
+	@Override
+	public void holdCooldown()
+	{
+		this.heldCooldown = owner.getCooldown(Material.ENDER_PEARL);
+	}
+
+	@Override
+	public void applyHeldCooldown()
+	{
+		DelayUtils.executeDelayedTask(() ->
+		{
+			owner.setCooldown(Material.ENDER_PEARL,heldCooldown);
+			heldCooldown = 1;
+		});
 	}
 }

@@ -8,7 +8,7 @@ api-version: '1.21.1'
 load: STARTUP
 
 commands:
-    expocooldown:
+    expocool:
         description: Management of Exponential Cooldown
         aliases: [ec]
         permission: ec.commands.expocool

@@ -4,7 +4,6 @@ ExpoCool (Exponential Cooldown) is a spigot/paper plugin designed to add exponen
 ## Features
 * Cooldowns for enderpearls and tridents while in combat
 * Configurable multiplier and base values for cooldown
-* Simple battle system
 
 ## Installation
 There is no installation for this type of application. Downloading the source code or release binary is all you need.

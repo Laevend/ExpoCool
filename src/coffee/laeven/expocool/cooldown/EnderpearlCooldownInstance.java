@@ -15,11 +15,9 @@ public class EnderpearlCooldownInstance extends CooldownInstance
 	{
 		super(p,CooldownType.ENDERPEARL);
 		
-		baseMultiplier = CooldownCtrl.Config.ENDERPEARL_BASE_MULTIPLIER.get();
-		baseCooldown = CooldownCtrl.Config.ENDERPEARL_BASE_COOLDOWN.get();
-		basePower = CooldownCtrl.Config.ENDERPEARL_BASE_POWER.get();
+		multiplier = CooldownCtrl.Config.ENDERPEARL_MULTIPLIER.get();
+		base = CooldownCtrl.Config.ENDERPEARL_BASE.get();
 		
-		powerModifierAmount = CooldownCtrl.Config.ENDERPEARL_POWER_INCREMENT.get();
 		minCooldown = CooldownCtrl.Config.ENDERPEARL_MIN_COOLDOWN.get();
 		maxCooldown = CooldownCtrl.Config.ENDERPEARL_MAX_COOLDOWN.get();
 		
@@ -30,7 +28,8 @@ public class EnderpearlCooldownInstance extends CooldownInstance
 		cooloffClock = new CooloffClock(deductDelayInTicks);
 		cooloffClock.start();
 		
-		heldCooldown = 1;
+		heldCooldownInTicks = 1;
+		nextCooldown = minCooldown;
 	}
 
 	@Override
@@ -39,7 +38,7 @@ public class EnderpearlCooldownInstance extends CooldownInstance
 		// Delay setting cooldown by 1 tick (50ms) to stop vanilla Minecraft overriding our custom cooldown
 		DelayUtils.executeDelayedTask(() ->
 		{
-			owner.setCooldown(Material.ENDER_PEARL,newCooldownInTicks);
+			getPlayer().setCooldown(Material.ENDER_PEARL,newCooldownInTicks);
 		});
 	}
 
@@ -47,15 +46,15 @@ public class EnderpearlCooldownInstance extends CooldownInstance
 	public void removeIfPlayerIsOffline()
 	{
 		Logg.verb("Is player offline?",Logg.VerbGroup.COOLDOWN_INSTANCE);
-		if(owner.isOnline()) { return; }
-		CooldownCtrl.removeEnderpearlCooldownInstance(owner.getUniqueId());
+		if(isOnline()) { return; }
+		CooldownCtrl.removeEnderpearlCooldownInstance(owner);
 		Logg.verb("Player is offline, removing instance...",Logg.VerbGroup.COOLDOWN_INSTANCE);
 	}
 
 	@Override
 	public void holdCooldown()
 	{
-		this.heldCooldown = owner.getCooldown(Material.ENDER_PEARL);
+		this.heldCooldownInTicks = getPlayer().getCooldown(Material.ENDER_PEARL);
 	}
 
 	@Override
@@ -63,8 +62,8 @@ public class EnderpearlCooldownInstance extends CooldownInstance
 	{
 		DelayUtils.executeDelayedTask(() ->
 		{
-			owner.setCooldown(Material.ENDER_PEARL,heldCooldown);
-			heldCooldown = 1;
+			getPlayer().setCooldown(Material.ENDER_PEARL,heldCooldownInTicks);
+			heldCooldownInTicks = 1;
 		});
 	}
 }

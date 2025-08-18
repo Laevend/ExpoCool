@@ -85,8 +85,6 @@ public class CombatCtrl implements Listener
 	{
 		if(playersInCombat.containsKey(e.getPlayer().getUniqueId()))
 		{
-			playersInCombat.get(e.getPlayer().getUniqueId()).resync(e.getPlayer());
-			
 			if(CooldownCtrl.isInDebugMode(e.getPlayer()))
 			{
 				playersInCombat.get(e.getPlayer().getUniqueId()).startDebugClock();

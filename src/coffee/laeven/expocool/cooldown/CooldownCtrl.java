@@ -61,7 +61,7 @@ public class CooldownCtrl implements Listener
 			EnderpearlCooldownInstance eci = pearlCooldownMap.get(e.getPlayer().getUniqueId());
 			
 			// If their cooldown is back to normal, no point keeping it in memory when they leave
-			if(eci.getPowerModifier() == 0f || eci.getLastCooldown() == 0f)
+			if(eci.getNextCooldown() == 0f)
 			{
 				removeEnderpearlCooldownInstance(e.getPlayer().getUniqueId());
 			}
@@ -75,7 +75,7 @@ public class CooldownCtrl implements Listener
 			TridentCooldownInstance tci = tridentCooldownMap.get(e.getPlayer().getUniqueId());
 			
 			// If their cooldown is back to normal, no point keeping it in memory when they leave
-			if(tci.getPowerModifier() == 0f || tci.getLastCooldown() == 0f)
+			if(tci.getNextCooldown() == 0f)
 			{
 				removeTridentCooldownInstance(e.getPlayer().getUniqueId());
 			}
@@ -95,7 +95,6 @@ public class CooldownCtrl implements Listener
 		if(pearlCooldownMap.containsKey(e.getPlayer().getUniqueId()))
 		{
 			EnderpearlCooldownInstance eci = pearlCooldownMap.get(e.getPlayer().getUniqueId());
-			eci.resync(e.getPlayer());
 			eci.applyHeldCooldown();
 			
 			if(playersInDebugMode.contains(e.getPlayer().getUniqueId()))
@@ -107,7 +106,6 @@ public class CooldownCtrl implements Listener
 		if(tridentCooldownMap.containsKey(e.getPlayer().getUniqueId()))
 		{
 			TridentCooldownInstance tci = tridentCooldownMap.get(e.getPlayer().getUniqueId());
-			tci.resync(e.getPlayer());
 			tci.applyHeldCooldown();
 			
 			if(playersInDebugMode.contains(e.getPlayer().getUniqueId()))
@@ -133,11 +131,11 @@ public class CooldownCtrl implements Listener
 		if(!pearlCooldownMap.containsKey(p.getUniqueId()))
 		{
 			pearlCooldownMap.put(p.getUniqueId(),new EnderpearlCooldownInstance(p));
-			
-			if(playersInDebugMode.contains(p.getUniqueId()))
-			{
-				pearlCooldownMap.get(p.getUniqueId()).startDebugClock();
-			}
+		}
+		
+		if(playersInDebugMode.contains(p.getUniqueId()))
+		{
+			pearlCooldownMap.get(p.getUniqueId()).startDebugClock();
 		}
 		
 		pearlCooldownMap.get(p.getUniqueId()).triggerItemUse();
@@ -180,11 +178,11 @@ public class CooldownCtrl implements Listener
 		if(!tridentCooldownMap.containsKey(playerUUID))
 		{
 			tridentCooldownMap.put(playerUUID,new TridentCooldownInstance(e.getPlayer()));
-			
-			if(playersInDebugMode.contains(playerUUID))
-			{
-				tridentCooldownMap.get(playerUUID).startDebugClock();
-			}
+		}
+		
+		if(playersInDebugMode.contains(playerUUID))
+		{
+			tridentCooldownMap.get(playerUUID).startDebugClock();
 		}
 		
 		tridentCooldownMap.get(playerUUID).triggerItemUse();
@@ -309,19 +307,15 @@ public class CooldownCtrl implements Listener
 	 */
 	public static class Config implements Configurable
 	{
-		public static final ConfigItem<Float> ENDERPEARL_BASE_MULTIPLIER = new ConfigItem<>("cooldown.enderpearl.base_multiplier",1.2f,"The base multiplier that when combined with the multiplier power acts as a multiplier to the players enderpearl cooldown (in real seconds).");
-		public static final ConfigItem<Float> ENDERPEARL_BASE_COOLDOWN = new ConfigItem<>("cooldown.enderpearl.base_cooldown",0.5f,"The starting value of an enderpearls cooldown (must be lower than min_cooldown) (in real seconds).");
-		public static final ConfigItem<Float> ENDERPEARL_BASE_POWER = new ConfigItem<>("cooldown.enderpearl.base_multiplier_power",1f,"The power that the base multiplier will be raised to (base_multiplier ^ base_multiplier_power).");
-		public static final ConfigItem<Float> ENDERPEARL_POWER_INCREMENT = new ConfigItem<>("cooldown.enderpearl.power_increment",1f,"How much to increase the base_multiplier_power by everytime a pearl is thrown.");
+		public static final ConfigItem<Float> ENDERPEARL_MULTIPLIER = new ConfigItem<>("cooldown.enderpearl.multiplier",1.2f,"Value used to multiply the base by and then subsequently the existing enderpearls cooldown (in real seconds).");
+		public static final ConfigItem<Float> ENDERPEARL_BASE = new ConfigItem<>("cooldown.enderpearl.base",0.5f,"The starting value of an enderpearls cooldown (must be lower than min_cooldown) (in real seconds).");
 		public static final ConfigItem<Float> ENDERPEARL_MIN_COOLDOWN = new ConfigItem<>("cooldown.enderpearl.min_cooldown",1f,"The lowest value a enderpearls cooldown can be (cooldown is clamped to this value if cooldown falls below this value) (must be higher than base_cooldown) (in real seconds).");
 		public static final ConfigItem<Float> ENDERPEARL_MAX_COOLDOWN = new ConfigItem<>("cooldown.enderpearl.max_cooldown",15f,"The highest value an enderpearls cooldown can be (cooldown is clamped to this value if cooldown rises above this value) (must be higher than base_cooldown & min_cooldown) (in real seconds).");
 		public static final ConfigItem<Float> ENDERPEARL_COOLDOWN_REDUCTION_DELAY = new ConfigItem<>("cooldown.enderpearl.cooldown_deduct_delay",10f,"They delay (in real seconds) that need to elapse without throwing a pearl for a cooldown reduction.");
 		public static final ConfigItem<Float> ENDERPEARL_COOLDOWN_REDUCTION_AMOUNT = new ConfigItem<>("cooldown.enderpearl.cooldown_deduct_amount",1f,"The amount (in real seconds) to deduct from the players current enderpearl cooldown.");
 		
-		public static final ConfigItem<Float> TRIDENT_BASE_MULTIPLIER = new ConfigItem<>("cooldown.trident.base_multiplier",1.2f,"The base multiplier that when combined with the multiplier power acts as a multiplier to the players enderpearl cooldown (in real seconds).");
-		public static final ConfigItem<Float> TRIDENT_BASE_COOLDOWN = new ConfigItem<>("cooldown.trident.base_cooldown",0.5f,"The starting value of an tridents cooldown (must be lower than min_cooldown) (in real seconds).");
-		public static final ConfigItem<Float> TRIDENT_BASE_POWER = new ConfigItem<>("cooldown.trident.base_multiplier_power",1f,"The power that the base multiplier will be raised to (base_multiplier ^ base_multiplier_power).");
-		public static final ConfigItem<Float> TRIDENT_POWER_INCREMENT = new ConfigItem<>("cooldown.trident.power_increment",1f,"How much to increase the base_multiplier_power by everytime a pearl is thrown.");
+		public static final ConfigItem<Float> TRIDENT_MULTIPLIER = new ConfigItem<>("cooldown.trident.base_multiplier",1.2f,"Value used to multiply the base by and then subsequently the existing tridents cooldown (in real seconds).");
+		public static final ConfigItem<Float> TRIDENT_BASE = new ConfigItem<>("cooldown.trident.base_cooldown",0.5f,"The starting value of a tridents cooldown (must be lower than min_cooldown) (in real seconds).");
 		public static final ConfigItem<Float> TRIDENT_MIN_COOLDOWN = new ConfigItem<>("cooldown.trident.min_cooldown",1f,"The lowest value a tridents cooldown can be (cooldown is clamped to this value if cooldown falls below this value) (must be higher than base_cooldown) (in real seconds).");
 		public static final ConfigItem<Float> TRIDENT_MAX_COOLDOWN = new ConfigItem<>("cooldown.trident.max_cooldown",15f,"The highest value a tridents cooldown can be (cooldown is clamped to this value if cooldown rises above this value) (must be higher than base_cooldown & min_cooldown) (in real seconds).");
 		public static final ConfigItem<Float> TRIDENT_COOLDOWN_REDUCTION_DELAY = new ConfigItem<>("cooldown.trident.cooldown_deduct_delay",10f,"They delay (in real seconds) that need to elapse without throwing a pearl for a cooldown reduction.");

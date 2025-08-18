@@ -2,6 +2,7 @@ package coffee.laeven.expocool.cooldown;
 
 import java.text.DecimalFormat;
 import java.util.Objects;
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -20,29 +21,25 @@ import coffee.laeven.expocool.utils.clocks.RepeatingClock;
  */
 public abstract class CooldownInstance
 {
-	protected Player owner;
+	protected UUID owner;
 	protected String name;
 	
-	protected float baseMultiplier = 1.2f;					// Base multiplier {cooldown.enderpearl.base_multiplier}
-	protected float baseCooldown = 0.5f;					// Base cooldown. {cooldown.enderpearl.base_cooldown}
-	protected float basePower = 1f;							// Base power. {cooldown.enderpearl.base_multiplier_power}
-	
-	protected float powerModifier = 0f;						// Modifies base power.
-	protected float powerModifierAmount = 0f;				// Amount to increment power modifier by. {cooldown.enderpearl.power_increment}
-	protected float multiplier = 0f;						// Multiplier calculated from (baseMultiplier ^ (baseMultiplier + powerModifier)).
+	protected float multiplier = 1.2f;						// Base multiplier {cooldown.enderpearl.multiplier}
+	protected float base = 0.5f;							// Base cooldown. {cooldown.enderpearl.base}
 	
 	protected float minCooldown = 1;						// Minimum cooldown (clamped). {cooldown.enderpearl.min_cooldown}
 	protected float maxCooldown = 15;						// Maximum cooldown (clamped). {cooldown.enderpearl.max_cooldown}
 	
 	protected float deductDelay = 0f;						// Delay before a deduction in the cooldown. {cooldown.enderpearl.cooldown_deduct_delay}
 	protected float deductAmount = 0f;						// Deduct amount. {cooldown.enderpearl.cooldown_deduct_amount}
-	protected float totalDeductAmount = 0f;					// Total amount of deduction (equal to deductAmount accumulated overtime when not using pearl or trident)
+	private boolean cooloffTriggered = false;				// When a player waits the alloted time for a reduction in cooldown this is set to true and prevents a multiply for the next cooldown
 	
 	protected CooloffClock cooloffClock = null;
 	protected DebugClock debugClock = null;
 	
 	protected float lastCooldown = 0f;						// Used for debug viewing
-	protected int heldCooldown = 0;							/** Cooldown held if player disconnects. {@link #holdCooldown()} */
+	protected float nextCooldown = 0f;						// Next cooldown to be set
+	protected int heldCooldownInTicks = 0;					/** Cooldown held if player disconnects. {@link #holdCooldown()} */
 	
 	protected CooldownType type;
 	
@@ -50,7 +47,7 @@ public abstract class CooldownInstance
 	{
 		Objects.requireNonNull(p,"Player cannot be null!");
 		Objects.requireNonNull(type,"CooldownType cannot be null!");
-		this.owner = p;
+		this.owner = p.getUniqueId();
 		this.name = p.getName();
 		this.type = type;
 	}
@@ -60,11 +57,8 @@ public abstract class CooldownInstance
 	 */
 	public void triggerItemUse()
 	{
-		// Unlikely to need a power higher than 9999
-		powerModifier = MathUtils.clamp(0,9999f,(powerModifier + powerModifierAmount));
 		calculateNewCooldown();
 		cooloffClock.refill();
-		totalDeductAmount = 0f;
 	}
 	
 	/**
@@ -72,24 +66,20 @@ public abstract class CooldownInstance
 	 */
 	public void calculateNewCooldown()
 	{
-		// Create multiplier
-		float newCooldownMultiplier = (float) Math.pow(baseMultiplier,(basePower + powerModifier));
-		
-		// Create cooldown (in seconds)
-		float newCooldown = MathUtils.clamp(minCooldown,maxCooldown,(newCooldownMultiplier * baseCooldown));
-		
-		// Deduct cooldown
-		newCooldown = MathUtils.clamp(minCooldown,maxCooldown,(newCooldown - totalDeductAmount));
-		
-		lastCooldown = newCooldown;
+		// Multiply last cooldown by multiply amount (unless a cooloff was triggered)
+		float newCooldown = MathUtils.clamp(minCooldown,maxCooldown,(cooloffTriggered ? nextCooldown * 1f : nextCooldown * multiplier));
+		cooloffTriggered = false;
 		
 		// Convert cooldown in seconds to game ticks
 		int newCooldownInTicks = (int) (newCooldown * 20);
 		setNewCooldown(newCooldownInTicks);
 		
-		Logg.verb("(" + name + ") [" + type.toString().toLowerCase() + "] New multiplier > " + newCooldownMultiplier,Logg.VerbGroup.COOLDOWN_INSTANCE);
+		Logg.verb("(" + name + ") [" + type.toString().toLowerCase() + "] Last cooldown > " + lastCooldown,Logg.VerbGroup.COOLDOWN_INSTANCE);
 		Logg.verb("(" + name + ") [" + type.toString().toLowerCase() + "] New cooldown > " + newCooldown,Logg.VerbGroup.COOLDOWN_INSTANCE);
 		Logg.verb("(" + name + ") [" + type.toString().toLowerCase() + "] New cooldown (in ticks) > " + newCooldownInTicks,Logg.VerbGroup.COOLDOWN_INSTANCE);
+		
+		lastCooldown = newCooldown;
+		nextCooldown = lastCooldown;
 	}
 	
 	/**
@@ -103,9 +93,7 @@ public abstract class CooldownInstance
 	 */
 	public void resetCooldown()
 	{
-		powerModifier = 0f;
-		totalDeductAmount = 0f;
-		lastCooldown = 1f;
+		nextCooldown = base;
 		removeIfPlayerIsOffline();
 	}
 	
@@ -119,6 +107,9 @@ public abstract class CooldownInstance
 		public CooloffClock(long deductDelay)
 		{
 			super(type.toString().toLowerCase() + "_cooloff_clock",deductDelay);
+			
+			Logg.verb("(" + name + ") [" + type.toString().toLowerCase() + "] Cooling off, Delay (in secs) > " + deductAmount,Logg.VerbGroup.COOLDOWN_INSTANCE);
+			Logg.verb("(" + name + ") [" + type.toString().toLowerCase() + "] Cooling off, Delay (in ticks) > " + deductDelay,Logg.VerbGroup.COOLDOWN_INSTANCE);
 		}
 
 		@Override
@@ -127,19 +118,15 @@ public abstract class CooldownInstance
 			// Refill clock to begin counting down again
 			refill();
 			
-			// No power modifier? No cooldown to deduct
-			if(powerModifier == 0f) { return; }
-			
-			powerModifier = MathUtils.clamp(0,9999f,(powerModifier - powerModifierAmount));
-			
 			// No point deducting more than the max cooldown
-			totalDeductAmount = MathUtils.clamp(0,maxCooldown,(totalDeductAmount + deductAmount));
+			nextCooldown = MathUtils.clamp(0,maxCooldown,(nextCooldown - deductAmount));
+			cooloffTriggered = true;
 			
-			Logg.verb("(" + name + ") [" + type.toString().toLowerCase() + "] Cooling off, power modifier > " + powerModifier,Logg.VerbGroup.COOLDOWN_INSTANCE);
-			Logg.verb("(" + name + ") [" + type.toString().toLowerCase() + "] Cooling off, totalDeductAmount > " + totalDeductAmount,Logg.VerbGroup.COOLDOWN_INSTANCE);
+			Logg.verb("(" + name + ") [" + type.toString().toLowerCase() + "] Cooling off, Next cooldown > " + nextCooldown,Logg.VerbGroup.COOLDOWN_INSTANCE);
+			Logg.verb("(" + name + ") [" + type.toString().toLowerCase() + "] Cooling off, Deduct amount > " + deductAmount,Logg.VerbGroup.COOLDOWN_INSTANCE);
 			
 			// If power modifier ever reaches 0 or the cooldown reaches 0, reset cooldown back to 0
-			if(powerModifier == 0f || lastCooldown == 0f)
+			if(nextCooldown == 0f)
 			{
 				resetCooldown();
 			}
@@ -198,7 +185,7 @@ public abstract class CooldownInstance
 			}
 			
 			debugBar.setVisible(true);
-			debugBar.addPlayer(owner);
+			debugBar.addPlayer(getPlayer());
 		}
 		
 		@Override
@@ -216,36 +203,35 @@ public abstract class CooldownInstance
 		{
 			if(type == CooldownType.ENDERPEARL)
 			{
-				debugBar.setTitle("Enderpearl cooldown remaining (" + df.format(((float) owner.getCooldown(Material.ENDER_PEARL) / 20f)) + ")");
-				debugBar.setProgress(MathUtils.clamp(0f,1f,(1f / lastCooldown) * ((float) owner.getCooldown(Material.ENDER_PEARL) / 20f)));
+				debugBar.setTitle("Enderpearl cooldown remaining (" + df.format(((float) getPlayer().getCooldown(Material.ENDER_PEARL) / 20f)) + ")");
+				debugBar.setProgress(MathUtils.clamp(0f,1f,(1f / lastCooldown) * ((float) getPlayer().getCooldown(Material.ENDER_PEARL) / 20f)));
 			}
 			else if(type == CooldownType.TRIDENT)
 			{
-				debugBar.setTitle("Trident cooldown remaining (" + df.format(((float) owner.getCooldown(Material.TRIDENT) / 20f)) + ")");
-				debugBar.setProgress(MathUtils.clamp(0f,1f,(1f / lastCooldown) * ((float) owner.getCooldown(Material.TRIDENT) / 20f)));
+				debugBar.setTitle("Trident cooldown remaining (" + df.format(((float) getPlayer().getCooldown(Material.TRIDENT) / 20f)) + ")");
+				debugBar.setProgress(MathUtils.clamp(0f,1f,(1f / lastCooldown) * ((float) getPlayer().getCooldown(Material.TRIDENT) / 20f)));
 			}
 		}
 	}
 	
-	/**
-	 * Set owner of this cooldown instance
-	 * <p>Required when player leaves and re-joins the server.
-	 * <p>Rejoining the server desyncs their player interface
-	 * @param owner
-	 */
-	public void resync(Player owner)
+	public Player getPlayer()
 	{
-		this.owner = owner;
+		return Bukkit.getPlayer(owner);
 	}
 	
-	public float getPowerModifier()
+	public boolean isOnline()
 	{
-		return powerModifier;
+		return Bukkit.getPlayer(owner) != null;
 	}
 
 	public float getLastCooldown()
 	{
 		return lastCooldown;
+	}
+	
+	public float getNextCooldown()
+	{
+		return nextCooldown;
 	}
 	
 	/**
@@ -274,11 +260,13 @@ public abstract class CooldownInstance
 		if(cooloffClock != null && cooloffClock.isEnabled())
 		{
 			cooloffClock.stop();
+			cooloffClock = null;
 		}
 		
 		if(debugClock != null && debugClock.isEnabled())
 		{
 			debugClock.stop();
+			debugClock = null;
 		}
 	}
 	

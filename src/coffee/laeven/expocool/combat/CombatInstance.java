@@ -18,8 +18,7 @@ import coffee.laeven.expocool.utils.clocks.RepeatingClock;
 
 public class CombatInstance
 {
-	private Player playerInCombat;
-	private UUID playerUUID;
+	private UUID playerInCombat;
 	private String name;
 	private CombatClock combatClock;
 	private DebugClock debugClock = null;
@@ -27,8 +26,7 @@ public class CombatInstance
 	public CombatInstance(Player p)
 	{
 		Objects.requireNonNull(p,"Player cannot be null!");
-		this.playerInCombat = p;
-		this.playerUUID = p.getUniqueId();
+		this.playerInCombat = p.getUniqueId();
 		this.name = p.getName();
 		this.combatClock = new CombatClock();
 		this.combatClock.start();
@@ -37,6 +35,7 @@ public class CombatInstance
 	public void dispose()
 	{
 		if(combatClock.isEnabled()) { combatClock.stop(); }
+		combatClock = null;
 		stopDebugClock();
 	}
 	
@@ -65,17 +64,6 @@ public class CombatInstance
 	{
 		return debugClock;
 	}
-	
-	/**
-	 * Set owner of this cooldown instance
-	 * <p>Required when player leaves and re-joins the server.
-	 * <p>Rejoining the server desyncs their player interface
-	 * @param owner
-	 */
-	public void resync(Player owner)
-	{
-		this.playerInCombat = owner;
-	}
 
 	public class CombatClock extends RefillableIntervalClock
 	{
@@ -83,21 +71,21 @@ public class CombatInstance
 		{
 			super(name + "_combat_clock",(long) (CombatCtrl.Config.IN_COMBAT_ELAPSED_TIME_TO_LEAVE_COMBAT.get() * 20));
 			
-			if(CooldownCtrl.isInDebugMode(playerInCombat))
+			if(CooldownCtrl.isInDebugMode(getPlayer()))
 			{
-				PrintUtils.actionBar(playerInCombat,"&cYou are now in combat!");
+				PrintUtils.actionBar(getPlayer(),"&cYou are now in combat!");
 			}
 		}
 
 		@Override
 		public void execute() throws Exception
 		{
-			CombatCtrl.tagPlayerAsOutOfCombat(playerUUID);
+			CombatCtrl.tagPlayerAsOutOfCombat(playerInCombat);
 		}
 
 		public Player getPlayerInCombat()
 		{
-			return playerInCombat;
+			return getPlayer();
 		}
 	}
 	
@@ -124,9 +112,9 @@ public class CombatInstance
 			combatTime.setProgress(1.0d);
 			
 			combatLeaveCountdown.setVisible(true);
-			combatLeaveCountdown.addPlayer(playerInCombat);
+			combatLeaveCountdown.addPlayer(getPlayer());
 			combatTime.setVisible(true);
-			combatTime.addPlayer(playerInCombat);
+			combatTime.addPlayer(getPlayer());
 		}
 		
 		@Override
@@ -152,5 +140,15 @@ public class CombatInstance
 			
 			combatLeaveCountdown.setProgress(MathUtils.clamp(0.0,1.0,(1f / maxCombatTimeInTicks) * ((float) combatClock.getInterval())));
 		}
+	}
+	
+	public Player getPlayer()
+	{
+		return Bukkit.getPlayer(playerInCombat);
+	}
+	
+	public boolean isOnline()
+	{
+		return Bukkit.getPlayer(playerInCombat) != null;
 	}
 }

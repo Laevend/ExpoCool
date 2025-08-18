@@ -40,7 +40,6 @@ public class YamlConfig implements PluginConfig
 	 * Create a new configuration file object
 	 * @param configFile Configuration file
 	 * @param defaults Default values for this configuration file
-	 * @param header The header comment of the configuration file
 	 */
 	public YamlConfig(Path configFile,List<ConfigItem<?>> defaults)
 	{

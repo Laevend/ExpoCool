@@ -8,11 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.codehaus.plexus.interpolation.util.StringUtils;
 
 import coffee.laeven.expocool.combat.CombatCtrl;
 import coffee.laeven.expocool.commands.ExpoCoolCommand;
@@ -106,7 +106,7 @@ public class ExpoCool extends JavaPlugin
 				if(configurableClass.getSimpleName().equals("Config"))
 				{
 					String[] canonicalNameSplit = configurableClass.getCanonicalName().split("[.]");
-					className = StringUtils.capitalizeFirstLetter(canonicalNameSplit[canonicalNameSplit.length - 2]);
+					className = StringUtils.capitalize(canonicalNameSplit[canonicalNameSplit.length - 2]);
 				}
 				else
 				{
@@ -235,31 +235,31 @@ public class ExpoCool extends JavaPlugin
 
 	public static int getMajorVersion()
 	{
-		String major = INSTANCE.getDescription().getVersion().split("[.]")[0];
+		String major = INSTANCE.getPluginMeta().getVersion().split("[.]")[0];
 		return major.length() == 0 ? 0 : Integer.parseInt(major);
 	}
 
 	public static int getMinorVersion()
 	{
-		String minor = INSTANCE.getDescription().getVersion().split("[.]")[1];
+		String minor = INSTANCE.getPluginMeta().getVersion().split("[.]")[1];
 		return minor.length() == 0 ? 0 : Integer.parseInt(minor);
 	}
 
 	public static int getRevision()
 	{
-		String patch = INSTANCE.getDescription().getVersion().split("[.]")[2];
+		String patch = INSTANCE.getPluginMeta().getVersion().split("[.]")[2];
 		return patch.length() == 0 ? 0 : Integer.parseInt(patch);
 	}
 	
 	public static int getHotfix()
 	{
-		String hotfix = INSTANCE.getDescription().getVersion().split("[.]")[3];
+		String hotfix = INSTANCE.getPluginMeta().getVersion().split("[.]")[3];
 		return hotfix.length() == 0 ? 0 : Integer.parseInt(hotfix);
 	}
 
 	public static String getVersion()
 	{
-		return INSTANCE.getDescription().getVersion();
+		return INSTANCE.getPluginMeta().getVersion();
 	}
 	
 	public static PluginConfig getConfigFile()
@@ -295,10 +295,10 @@ public class ExpoCool extends JavaPlugin
 		"&r\r\n",
 		"          &8[" + ColourUtils.applyColour("Exponential Cooldown",ColourUtils.TEXT) + "&8]&r\r\n",
 		"&r\r\n",
-		"          &9Version &8> &e" + getDescription().getVersion() + "&r\r\n",
+		"          &9Version &8> &e" + getPluginMeta().getVersion() + "&r\r\n",
 		"          &9Message Prefix &8> " + ColourUtils.applyColour(Logg.PLUGIN_PREFIX,ColourUtils.TEXT) + "&r\r\n",
-		"          &9Spigot API &8> &e" + getDescription().getAPIVersion() + "&r\r\n",
-		"          &9Contributors &8> &8[&e" + String.join(",",getDescription().getAuthors()) + "&8]&r\r\n",
+		"          &9Spigot API &8> &e" + getPluginMeta().getAPIVersion() + "&r\r\n",
+		"          &9Contributors &8> &8[&e" + String.join(",",getPluginMeta().getAuthors()) + "&8]&r\r\n",
 		"          &9Bukkit Ver &8> &e" + Bukkit.getBukkitVersion() + "&r\r\n",
 		"&r\r\n"
 	};	

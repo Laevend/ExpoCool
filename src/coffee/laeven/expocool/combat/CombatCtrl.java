@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.Material;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.Player;
@@ -17,6 +18,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -32,6 +34,7 @@ public class CombatCtrl implements Listener
 {
 	private static Map<UUID,CombatInstance> playersInCombat = new HashMap<>();
 	
+	// Handle melee attacks
 	@EventHandler(priority = EventPriority.HIGH)
 	public void handle(EntityDamageByEntityEvent e)
 	{
@@ -42,6 +45,7 @@ public class CombatCtrl implements Listener
 		attemptCombat(attacker,victim,e.getDamage());
 	}
 	
+	// Handle ranged attacks
 	@EventHandler(priority = EventPriority.HIGH)
 	public void handleProjectile(ProjectileHitEvent e)
 	{
@@ -54,6 +58,7 @@ public class CombatCtrl implements Listener
 				!(e.getEntity() instanceof Firework) &&
 				!(e.getEntity() instanceof SpectralArrow) &&
 				!(e.getEntity() instanceof Trident)) { return; }
+		// TODO Add check for spear projectile
 		
 		// Delayed by 1 tick so that getLastDamage() becomes the damage the victim received just now
 		DelayUtils.executeDelayedTask(() ->
@@ -61,6 +66,15 @@ public class CombatCtrl implements Listener
 			Logg.verb("(" + attacker.getName() + ") v (" + victim.getName() + ") Projectile damage: " + victim.getLastDamage(),Logg.VerbGroup.IN_COMBAT);
 			attemptCombat(attacker,victim,victim.getLastDamage());
 		});
+	}
+	
+	// Handle when you dead
+	@EventHandler(priority = EventPriority.HIGH)
+	public void handle(EntityDeathEvent e)
+	{
+		if(!(e.getEntity() instanceof Player victim)) { return; }
+		
+		tagPlayerAsOutOfCombat(victim.getUniqueId());
 	}
 	
 	/**
@@ -161,6 +175,11 @@ public class CombatCtrl implements Listener
 		{
 			PrintUtils.actionBar(p,"&aYou are now out of combat");
 		}
+		
+		// Player is out of combat so reset their cooldown so vanilla values.
+		// Reset cooldown to vanilla max if cooldown is currently higher than vanilla max, otherwise don't change.
+		p.setCooldown(Material.ENDER_PEARL,p.getCooldown(Material.ENDER_PEARL) > 20 ? 20 : p.getCooldown(Material.ENDER_PEARL) > 0 ? p.getCooldown(Material.ENDER_PEARL) : 0);
+		p.setCooldown(Material.TRIDENT,0);
 	}
 	
 	/**

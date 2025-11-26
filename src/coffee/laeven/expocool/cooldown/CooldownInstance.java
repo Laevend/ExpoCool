@@ -257,15 +257,15 @@ public abstract class CooldownInstance
 	 */
 	public void dispose()
 	{
-		if(cooloffClock != null && cooloffClock.isEnabled())
+		if(cooloffClock != null)
 		{
-			cooloffClock.stop();
+			if(cooloffClock.isEnabled()) { cooloffClock.stop(); }
 			cooloffClock = null;
 		}
 		
-		if(debugClock != null && debugClock.isEnabled())
+		if(debugClock != null)
 		{
-			debugClock.stop();
+			if(debugClock.isEnabled()) { debugClock.stop(); }
 			debugClock = null;
 		}
 	}

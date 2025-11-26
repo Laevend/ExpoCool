@@ -2,7 +2,7 @@
 ExpoCool (Exponential Cooldown) is a spigot/paper plugin designed to add exponential cooldowns to enderpearls and tridents with the riptide enchantment during a combat encounter with another player. This makes it harder for players to run away and prevents fights turning into a constant chase.
 
 ## Features
-* Cooldowns for enderpearls and tridents while in combat
+* Exponential cooldowns for enderpearls and tridents while in combat that progressively get larger the more a pearl or trident is used
 * Configurable multiplier and base values for cooldown
 
 ## Installation
@@ -39,8 +39,8 @@ The table below displays the compatibility between Arc, Minecraft, and the Java 
 v1.2
 
 ## Dependencies
-* Spigot/Paper 1.21.1 API
-* Spigot/Paper 1.21.1 server
+* Spigot/Paper API
+* Spigot/Paper server
 
 ## System Requirements
 * Windows 10/11, Debain Linux (Other environments may work but not tested)

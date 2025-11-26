@@ -10,7 +10,7 @@ There is no installation for this type of application. Downloading the source co
 
 ## Usage
 1. Download and un-zip source code.
-2. Compile using Spigot or Paper API 1.21.1
+2. Compile using Spigot or Paper API
 3. Place it in your 'plugins' folder
 4. Run your server
 
@@ -20,8 +20,23 @@ Alternatively;
 2. Place it in your 'plugins' folder
 3. Run your server
 
+## Compatibility
+The table below displays the compatibility between Arc, Minecraft, and the Java version to run it.
+
+* **ExpoCool** = Version of ExpoCool
+* **Minecraft** = Version of Minecraft
+* **Java** = Version of Java required to run this module with
+* **Platform** = Supported platforms this plugin will run on (others may work but not tested)
+* **Binary** = Name of the binary file for this version
+
+**ExpoCool** | **Minecraft** | **Java** | **Platform** | **Binary**
+---------- | --------- | ---- | ---- | ----
+1.0 | 1.21.1 | Java 21 | Spigot/Paper | ExponentialCooldown-1.21.1-1.0.0.jar
+1.1 | 1.21.1 | Java 21 | Spigot/Paper | ExponentialCooldown-1.21.1-1.1.0.jar
+1.2 | 1.21.10 | Java 21 | Paper | ExponentialCooldown-1.21.10-1.2.0.jar
+
 ## Version
-v1.0
+v1.2
 
 ## Dependencies
 * Spigot/Paper 1.21.1 API

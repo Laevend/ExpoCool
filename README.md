@@ -21,7 +21,7 @@ Alternatively;
 3. Run your server
 
 ## Compatibility
-The table below displays the compatibility between Arc, Minecraft, and the Java version to run it.
+The table below displays the compatibility between the plugin, Minecraft, and the Java version to run it.
 
 * **ExpoCool** = Version of ExpoCool
 * **Minecraft** = Version of Minecraft
